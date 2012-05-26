@@ -29,13 +29,13 @@ uniform vec3 uParticlesColor;
 
 void main(void) {
    if (uIsPoint){
-      float velL = length(vPtVelocity.xy) * 4.0;
+      float velL = length(vPtVelocity.xy) * 0.7;
       vec3 appliedColor;
       appliedColor = uParticlesColor;
       appliedColor.x += (1. - appliedColor.x) * min(1.0, velL);
       appliedColor.y += (1. - appliedColor.y) * min(1.0, velL);
       appliedColor.z += (1. - appliedColor.z) * min(1.0, velL);
-      gl_FragColor = vec4(appliedColor, 1.0);
+      gl_FragColor = vec4(appliedColor, 0.8);
    }
    else {
       if (uIsSelected){
