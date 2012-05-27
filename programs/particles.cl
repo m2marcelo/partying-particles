@@ -102,7 +102,7 @@ __kernel void particles(__global float4* pos,
                         int   gravity,
                         int   reset)
 {
-    unsigned int i = get_global_id(0);
+    unsigned int i = get_global_id(0) * 4;
     uint seed = rndSeed * 1000 + i;
     
     float2 pt = pos[i].xy;
@@ -113,9 +113,13 @@ __kernel void particles(__global float4* pos,
         float r = randhashf(seed++, launcherRadius);
         float y = randhashf(seed++, 0.1);
         pt = (float2)(launcherPosX + r * cos(theta), launcherPosY - y);
-        vel[i] = (float2)(0, 0);
-
+        vel[i].xy = (float2)(0, 0);
+        
         pos[i].xy = pt;
+        pos[i].z = 1;
+        pos[i + 1].z = 2;
+        pos[i + 2].z = 3;
+        pos[i + 3].z = 4;
     } else {
 
         // Initial gravity
@@ -124,21 +128,24 @@ __kernel void particles(__global float4* pos,
             vel[i].y -= 9.81 * elapsedTime;
         }
 
+
         // Attraction and repulsion
 
         for (int j = 0; j < sphSize; j ++){
             float currSphereWeight = unitSphereWeight * sph[j].w;
             if (sph[j].z == 1.0){
                 float2 vec = normalize(sph[j].xy - pt);
-                float  n   = 9.81 / 2 * elapsedTime * (currSphereWeight * particleWeight / pow(distance(sph[j].xy, pt), 2.0));
+                float  n   = 9.81 / 3 * elapsedTime * (currSphereWeight * particleWeight / pow(distance(sph[j].xy, pt), 2.0));
                 vel[i] += vec * n;
             }
             else if (sph[j].z == 2.0){
                 float2 vec = normalize(sph[j].xy - pt);
-                float  n   = 9.81 / 2 * elapsedTime * (currSphereWeight * particleWeight / pow(distance(sph[j].xy, pt), 2.0));
+                float  n   = 9.81 / 3 * elapsedTime * (currSphereWeight * particleWeight / pow(distance(sph[j].xy, pt), 2.0));
                 vel[i] -= vec * n;
             }
         }
+
+
 
         // Collision check
 
@@ -146,7 +153,8 @@ __kernel void particles(__global float4* pos,
             float currSphereWeight = unitSphereWeight * sph[j].w;
             if (isColliding(pt + vel[i], sph[j].xy, sph[j].w)){
                 vel[i].xy = getBouncingVelocity(sph[j].xy, sph[j].w, pt, vel[i], currSphereWeight, particleWeight);
-                vel[i].xy *= (100 - absorption) / 100;
+                
+                //vel[i].xy *= (100 - 30) / 100.0;
             }
         }
 
@@ -154,4 +162,12 @@ __kernel void particles(__global float4* pos,
 
         pos[i].xy += vel[i];
     }
+
+
+
+    pos[i + 1].xy = pos[i].xy + (float2)(0, 0.2);
+    pos[i + 2].xy = pos[i].xy + (float2)(0.2, 0);
+    pos[i + 3].xy = pos[i].xy + (float2)(0.2, 0.2);
+
+    vel[i + 1] = vel[i + 2] = vel[i + 3] = vel[i].xy;
 }

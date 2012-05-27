@@ -84,7 +84,7 @@ var ParticlesSystem = function(canvas_id, config){
         },
         bgColor : this.config.backgroundColor,
         eyePos : this.config.startingEyePos,
-        fps : this.config.fps,
+        fps : 60,
         enableRotations : false,
         enableMoves : true,
         fovWidth : 15,
@@ -92,6 +92,9 @@ var ParticlesSystem = function(canvas_id, config){
         far: 100,
         zoomReduction : 0.6
     });
+    //this.egl.gl.blendFunc(this.egl.gl.SRC_ALPHA, this.egl.gl.DST_ALPHA);
+    //this.egl.gl.enable(this.egl.gl.BLEND);
+    //this.egl.gl.disable(this.egl.gl.DEPTH_TEST);
     this._initBuffers();
     this._initCL();
 };
@@ -156,7 +159,7 @@ ParticlesSystem.prototype.run = function(){
                 setScalarArg(6, self.config.launcherPos[1], 8);
                 setScalarArg(7, self.config.launcherRadius, 8);
                 setScalarArg(8, self.config.stopPlaneY, 8);
-                setScalarArg(9, (timestamp - lastTime) / 50000., 8);
+                setScalarArg(9, (timestamp - lastTime) / 75000., 8);
                 setScalarArg(10, self.config.absorption, 8);
                 setScalarArg(11, self.config.unitSphereWeight, 8);
                 setScalarArg(12, self.config.particleWeight, 8);
@@ -241,14 +244,21 @@ ParticlesSystem.prototype.updateSpheresPos = function(){
 ParticlesSystem.prototype._initBuffers = function() {
     var l1 = [];
     var ln = [];
-    
-    for (var i = 0; i < this.nbParticles; i++) {
+    var lidx = [];
+    for (var i = 0; i < this.nbParticles * 4; i++) {
         l1.push(0, 0, 0, 1);
+        
         ln.push(0, 0, 0);
+            lidx.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 2, i * 4 + 1, i * 4 + 3);
+
     }
     this.egl.setAttribute("aVertPosition", new Float32Array(l1));
     this.egl.setAttribute("aVertNormal", new Float32Array(ln));
     this.egl.setAttribute("aVelocity", new Float32Array(l1));
+    
+    this.particlesIdx = this.egl.gl.createBuffer();
+    this.egl.gl.bindBuffer(this.egl.gl.ELEMENT_ARRAY_BUFFER, this.particlesIdx);
+    this.egl.gl.bufferData(this.egl.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(lidx), this.egl.gl.STATIC_DRAW);   
 };
 
 
@@ -267,7 +277,7 @@ ParticlesSystem.prototype._drawScene = function(){
         setUniform("uIsSelected", 0);
         setUniform("uParticlesColor", this.config.particlesColor);
         setUniform("uLightPos", this.config.lightPosition);
-        draw(gl.POINTS, this.nbParticles);
+        draw(gl.TRIANGLES, this.nbParticles * 6, this.particlesIdx);
     
         for (var i = 0; i < this.spheres.length; i ++){
             setUniform("uIsPoint", 0);
@@ -277,7 +287,7 @@ ParticlesSystem.prototype._drawScene = function(){
             attach("aVertPosition", this.spheres[i].posbuf);
             attach("aVertNormal", this.spheres[i].normbuf);
             draw(gl.TRIANGLES, this.spheres[i].len, this.spheres[i].idxbuf);
-        }        
+        }
     }
     
     this.config.infoPanel.nbParticles.innerHTML = this.nbParticles;
@@ -345,7 +355,6 @@ ParticlesSystem.prototype.loadState = function(name){
             alert("Unknown scene");
             return;
         }
-        console.log(saveObj);
         this.spheres = [];
         this.updateSpheresPos();
         for (var i = 0; i < saveObj.spheres.length; ++ i){

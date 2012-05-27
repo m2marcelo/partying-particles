@@ -26,16 +26,20 @@ uniform bool uIsPoint;
 uniform bool uIsSelected;
 uniform vec3 uSphColor;
 uniform vec3 uParticlesColor;
+varying vec2 vTexCoords;
 
 void main(void) {
    if (uIsPoint){
-      float velL = length(vPtVelocity.xy) * 0.7;
+      float velL = length(vPtVelocity.xy) * 3.;
       vec3 appliedColor;
       appliedColor = uParticlesColor;
       appliedColor.x += (1. - appliedColor.x) * min(1.0, velL);
       appliedColor.y += (1. - appliedColor.y) * min(1.0, velL);
       appliedColor.z += (1. - appliedColor.z) * min(1.0, velL);
-      gl_FragColor = vec4(appliedColor, 0.8);
+    
+      
+      gl_FragColor = vec4(appliedColor, 1.0);
+      gl_FragColor.xyz *= (1. - length(vTexCoords));
    }
    else {
       if (uIsSelected){

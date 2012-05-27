@@ -29,6 +29,7 @@ uniform   vec3 uLightPos;
 uniform   bool uIsSelected;
 varying   vec3 vLightWeighting;
 varying   vec2 vPtVelocity;
+varying   vec2 vTexCoords;
 
 
 void main(void) {
@@ -37,8 +38,16 @@ void main(void) {
   gl_Position = uPMatrix * mvPosition;
   vLightWeighting = aVertNormal;
   if (uIsPoint) {
+      if (aVertPosition.z < 1.1){
+          vTexCoords = vec2(-1, -1);
+      } else if (aVertPosition.z < 2.1){
+          vTexCoords = vec2(-1, 1);
+      } else if (aVertPosition.z < 3.1){
+          vTexCoords = vec2(1, -1);    
+      } else {
+          vTexCoords = vec2(1, 1);
+      }
       gl_Position.z = 0.;
-      vLightWeighting = vec3(1.0, 1.0, 1.0);
       vPtVelocity = aVelocity;
   } else {
       vec4 lightPos = uMvMatrix * vec4(uLightPos, 1.0);
